@@ -69,7 +69,7 @@ class DatasetExt(df: Dataset[Row]) {
       })
       map.map(f => f._2).toList
     } else {
-      df.coalesce(1).write.format(format).options(opts).save(filePrefix + tempDir);
+      df.write.format(format).options(opts).save(filePrefix + tempDir);
       fileUtil.delete(conf, filePrefix + finalDir + "." + format)
       fileUtil.copyMerge(filePrefix + tempDir, filePrefix + finalDir + "." + format, conf, true);
       List(finalDir + "." + format)
