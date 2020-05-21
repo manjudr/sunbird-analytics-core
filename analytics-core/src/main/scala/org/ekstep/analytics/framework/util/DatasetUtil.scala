@@ -72,15 +72,14 @@ class DatasetExt(df: Dataset[Row]) {
     val opts = options.getOrElse(Map());
     val files = if(dims.nonEmpty) {
       val map = df.select(dims.map(f => col(f)):_*).distinct().collect().map(f => filePaths(dims, f, format, tempDir, finalDir)).toMap
-      df.write.format(format).options(opts).partitionBy(dims: _*).save(filePrefix + tempDir);
+      df.repartition(1).write.format(format).options(opts).partitionBy(dims: _*).save(filePrefix + tempDir);
       map.foreach(f => {
         fileUtil.delete(conf, filePrefix + f._2)
         fileUtil.copyMerge(filePrefix + f._1, filePrefix + f._2, conf, true);
       })
       map.map(f => f._2).toList
     } else {
-
-      recordTime(df.write.format(format).options(opts).save(filePrefix + tempDir), s"File write time taken -");
+      recordTime(df.repartition(1).write.format(format).options(opts).save(filePrefix + tempDir), s"File write time taken -");
       recordTime(fileUtil.delete(conf, filePrefix + finalDir + "." + format),s"File delete time taken - ")
       recordTime(fileUtil.copyMerge(filePrefix + tempDir, filePrefix + finalDir + "." + format, conf, true),s"File merge time taken");
       List(finalDir + "." + format)
