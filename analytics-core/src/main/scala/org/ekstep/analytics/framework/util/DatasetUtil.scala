@@ -2,9 +2,8 @@ package org.ekstep.analytics.framework.util
 
 import java.nio.file.Paths
 
-import org.apache.spark.sql.{Dataset, Row}
 import org.apache.spark.sql.functions.col
-import org.ekstep.analytics.framework.Level.INFO
+import org.apache.spark.sql.{Dataset, Row}
 import org.ekstep.analytics.framework.StorageConfig
 
 class DatasetExt(df: Dataset[Row]) {
@@ -30,15 +29,6 @@ class DatasetExt(df: Dataset[Row]) {
     }
 
     (Paths.get(tempDir, dimPaths.mkString("/")).toString(), Paths.get(finalDir, paths.mkString("/")) + "." + format)
-  }
-
-  def recordTime[R](block: => R, msg: String): (R) = {
-    implicit val className = "org.ekstep.analytics.job.CourseMetricsJob"
-    val t0 = System.currentTimeMillis()
-    val result = block
-    val t1 = System.currentTimeMillis()
-    JobLogger.log(msg + (t1 - t0), None, INFO)
-    result;
   }
 
   def saveToBlobStore(storageConfig: StorageConfig, format: String, reportId: String, options: Option[Map[String, String]], partitioningColumns: Option[Seq[String]]): List[String] = {
@@ -79,12 +69,12 @@ class DatasetExt(df: Dataset[Row]) {
       })
       map.map(f => f._2).toList
     } else {
-      recordTime(df.repartition(1).write.format(format).options(opts).save(filePrefix + tempDir), s"File write time taken -");
-      recordTime(fileUtil.delete(conf, filePrefix + finalDir + "." + format),s"File delete time taken - ")
-      recordTime(fileUtil.copyMerge(filePrefix + tempDir, filePrefix + finalDir + "." + format, conf, true),s"File merge time taken");
+      df.repartition(1).write.format(format).options(opts).save(filePrefix + tempDir)
+      fileUtil.delete(conf, filePrefix + finalDir + "." + format)
+      fileUtil.copyMerge(filePrefix + tempDir, filePrefix + finalDir + "." + format, conf, true)
       List(finalDir + "." + format)
     }
-    recordTime(fileUtil.delete(conf, filePrefix + tempDir),s"File removal time taken is -")
+    fileUtil.delete(conf, filePrefix + tempDir)
     files
   }
 
