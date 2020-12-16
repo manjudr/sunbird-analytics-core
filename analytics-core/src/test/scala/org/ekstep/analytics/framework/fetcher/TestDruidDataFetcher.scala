@@ -13,7 +13,7 @@ import ing.wbaa.druid.definitions.{AggregationType, PostAggregationType}
 import io.circe._
 import io.circe.parser._
 import org.ekstep.analytics.framework._
-import org.ekstep.analytics.framework.util.{CommonUtil, HTTPClient, JSONUtils}
+import org.ekstep.analytics.framework.util.{CommonUtil, EmbeddedPostgresqlService, HTTPClient, JSONUtils}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Matchers
 import org.joda.time.DateTimeUtils
@@ -23,6 +23,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class TestDruidDataFetcher extends SparkSpec with Matchers with MockFactory {
+
+    override def beforeAll(): Unit = {
+      super.beforeAll()
+      EmbeddedPostgresqlService.start()
+    }
 
     it should "check for getDimensionByType methods" in {
         val defaultExpr = DruidDataFetcher.getDimensionByType(None, "field", Option("field1"))
